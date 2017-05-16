@@ -52,3 +52,4 @@ model/
 *.npz
 .vscode/
 
+word2vec_model/GoogleNews-vectors-negative300.bin

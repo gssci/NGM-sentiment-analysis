@@ -6,14 +6,14 @@ It stores them into sparse matrices that I can then reuse in another script
 import logging
 import gensim
 import numpy as np
-from scipy.spatial.distance import cosine
 import scipy as sp
+import scipy.sparse
 import glob
 from bs4 import BeautifulSoup
 from nltk.tokenize import word_tokenize
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-model = gensim.models.KeyedVectors.load_word2vec_format('./model/GoogleNews-vectors-negative300.bin', binary=True)
+model = gensim.models.KeyedVectors.load_word2vec_format('./word2vec_model/GoogleNews-vectors-negative300.bin', binary=True)
 
 #the elements of both matrices below constitute the nodes of our graph
 #matrix of labeled embeddings
@@ -25,7 +25,7 @@ U = sp.sparse.lil_matrix((50000,300))
 def word2vec(w):
     """
     with this quick trick I can calculate the embeddings without normalizing the text (removing puctuaction, stop words etc...)
-    If I pass a word that is not in the model, like a stopword or some weird symbol, it just returns a zero vector that
+    If I pass a word that is not in the word2vec_model, like a stopword or some weird symbol, it just returns a zero vector that
     does not cotribute to the avg embedding
     """
     out = np.zeros(300)
@@ -36,7 +36,7 @@ def word2vec(w):
 
 i = 0
 for review in glob.glob('./data/train/pos/*.txt'):
-    #read file of training data and correctly returns text
+    #read file of training raw_data and correctly returns text
     #that includes html tags
     with open(review, 'r', encoding='utf8') as myfile:
         data = BeautifulSoup(myfile).get_text()
@@ -60,7 +60,7 @@ for review in glob.glob('./data/train/neg/*.txt'):
     i = i+1
 
 #exports matrix to be used later in another script
-sp.sparse.save_npz('labeled.npz', L.tocsr())
+sp.sparse.save_npz('./data/labeled.npz', L.tocsr())
 
 j = 0 
 for review in glob.glob('./data/train/unsup/*.txt'):
@@ -71,4 +71,4 @@ for review in glob.glob('./data/train/unsup/*.txt'):
     print(str(j))
     j = j+1
 
-sp.sparse.save_npz('unlabeled.npz', U.tocsr())
+sp.sparse.save_npz('./data/unlabeled.npz', U.tocsr())

@@ -23,6 +23,11 @@ L = sp.sparse.lil_matrix((25000,300))
 U = sp.sparse.lil_matrix((50000,300))
 
 def word2vec(w):
+    """
+    with this quick trick I can calculate the embeddings without normalizing the text (removing puctuaction, stop words etc...)
+    If I pass a word that is not in the model, like a stopword or some weird symbol, it just returns a zero vector that
+    does not cotribute to the avg embedding
+    """
     out = np.zeros(300)
     try:
         out = model.word_vec(w)
@@ -36,7 +41,12 @@ for review in glob.glob('./data/train/pos/*.txt'):
     with open(review, 'r', encoding='utf8') as myfile:
         data = BeautifulSoup(myfile).get_text()
     #NLTK function to extract words from text
+    #very important, much better than splitting the string
     words = word_tokenize(data)
+    
+    #embedding for review is calculated as average of the embeddings of all words
+    #this is not ideal but is shown to work reasonably well in literature
+    #if you need something a bit more sophisticated, look into Doc2Vec algorithms
     L[i] = np.mean([word2vec(w) for w in words], axis=0)
     print(str(i))
     i = i+1

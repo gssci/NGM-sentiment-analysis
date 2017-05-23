@@ -12,10 +12,11 @@ import numpy as np
 import scipy as sp
 import scipy.sparse
 from sklearn.metrics.pairwise import cosine_similarity
-from multiprocessing import Process, Manager, Value, Lock
+from multiprocessing import Process, Manager, Value, Lock, cpu_count
 import time
 import pickle
 import glob
+from operator import mul
 
 L = sp.sparse.load_npz('./data/graph/labeled.npz')
 U = sp.sparse.load_npz('./data/graph/unlabeled.npz')
@@ -23,9 +24,10 @@ M = sp.sparse.vstack([L,U])
 last_index_l = 25000
 last_index_u = 75000
 
-#we only keep the closest neighbors
+# we only keep the closest neighbors
 max_neighs = 10
 size = M.shape[0]
+
 
 def compute_files_indices():
     """
@@ -49,6 +51,7 @@ def compute_files_indices():
 
     pickle.dump(indices_dict, open( "./data/graph/indices_dict.p", "wb" ))
     return
+
 
 def compute_graph_for_embedding(graph,edges_weights,edges_ll,edges_lu,edges_uu,chunk,counter,lock):
     """
@@ -94,6 +97,27 @@ def compute_graph_for_embedding(graph,edges_weights,edges_ll,edges_lu,edges_uu,c
             print(str(counter.value))
     return
 
+
+def split_load(size,cores):
+    jobs_per_core = size//cores
+    job_counts = [jobs_per_core]*cores
+
+    split = list(map(mul, job_counts, range(1, cores + 1)))
+    n = np.sum(job_counts)
+
+    if n < size:
+        split[cores-1] += size-n
+
+    ranges = []
+
+    for i in range(cores):
+        if i == 0:
+            ranges += [range(0,split[i])]
+        else:
+            ranges += [range(split[i-1],split[i])]
+
+    return ranges
+
 if __name__ == '__main__':
     compute_files_indices()
 
@@ -108,23 +132,21 @@ if __name__ == '__main__':
     lock = Lock()
 
     processes = []
+    num_of_cpu = cpu_count()
 
-    #I split the job manually for my two-core laptop
-    chunks = [range(0,20000),range(20000,45000),range(45000,75000)]
+    chunks = split_load(size,num_of_cpu)
 
     for chunk in chunks:
-        p = Process(target=compute_graph_for_embedding, args=(graph, edges_weights, edges_ll, edges_lu, edges_uu, chunk, counter, lock))
+        p = Process(target=compute_graph_for_embedding,
+                    args=(graph, edges_weights, edges_ll, edges_lu, edges_uu, chunk, counter, lock))
         processes += [p]
 
     _ = [p.start() for p in processes]
     _ = [p.join() for p in processes]
 
-    #breathe
-    time.sleep(2)
-
-    #save to file the data structure that we worked so hard to compute
-    pickle.dump(graph, open("./data/graph/graph.p", "wb"))
-    pickle.dump(edges_weights, open("./data/graph/edges_weights.p", "wb"))
-    pickle.dump(edges_ll, open("./data/graph/edges_ll.p", "wb"))
-    pickle.dump(edges_lu, open("./data/graph/edges_lu.p", "wb"))
-    pickle.dump(edges_uu, open("./data/graph/edges_uu.p", "wb"))
+    # save to file the data structure that we worked so hard to compute
+    pickle.dump(dict(graph), open("./data/graph/graph.p", "wb"))
+    pickle.dump(dict(edges_weights), open("./data/graph/edges_weights.p", "wb"))
+    pickle.dump(list(edges_ll), open("./data/graph/edges_ll.p", "wb"))
+    pickle.dump(list(edges_lu), open("./data/graph/edges_lu.p", "wb"))
+    pickle.dump(list(edges_uu), open("./data/graph/edges_uu.p", "wb"))

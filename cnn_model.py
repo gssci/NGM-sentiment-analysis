@@ -2,13 +2,14 @@
 import tensorflow as tf
 
 
-class CNNModel(object):
-
-    def __init__(self, alpha1=0.2, alpha2=0.4, num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
-                 sequence_max_length=1014, num_quantized_chars=70):
+class CharCNN:
+    def __init__(self, num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
+                 sequence_max_length=1014, num_quantized_chars=70, num_neighbors=10, alpha1 = 0.2, alpha2 = 0.4):
 
         self.input_x = tf.placeholder(tf.float32, [None, num_quantized_chars, sequence_max_length, 1], name="input_x")
-        self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
+        self.labels = tf.placeholder(tf.float32, [None, num_quantized_chars, sequence_max_length, 1], name="labels")
+        self.neighbors = tf.placeholder(tf.int16, [None, num_neighbors, num_quantized_chars, sequence_max_length, 1], name="neighbors_x")
+        self.weights = tf.placeholder(tf.float32, [None, num_neighbors])
         self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
         # Convolutional Layer 1
@@ -41,7 +42,7 @@ class CNNModel(object):
 
         # Convolutional Layer 3
         with tf.name_scope("conv-maxpool-6"):
-            filter_shape = [1, filter_sizes[5], frame_size, frame_size]
+            filter_shape = [1, filter_sizes[2], frame_size, frame_size]
             W = tf.Variable(tf.random_normal(filter_shape, stddev=0.05), name="W")
             b = tf.Variable(tf.constant(0.1, shape=[frame_size]), name="b")
             conv = tf.nn.conv2d(h, W, strides=[1, 1, 1, 1], padding="VALID", name="conv3")
@@ -75,8 +76,8 @@ class CNNModel(object):
             fc_2_output = tf.nn.relu(tf.nn.xw_plus_b(drop2, W, b), name="fc-2-out")
 
         # Fully-connected Layer 3
-        with tf.name_scope("fc-3"):
+        with tf.name_scope("output"):
             W = tf.Variable(tf.random_normal([num_hidden_units, num_classes], stddev=0.05), name="W")
             b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
-            scores = tf.nn.xw_plus_b(fc_2_output, W, b, name="output")
-            predictions = tf.argmax(scores, 1, name="predictions")
+            self.scores = tf.nn.xw_plus_b(fc_2_output, W, b, name="output")
+            self.predictions = tf.argmax(self.scores, 1, name="predictions")

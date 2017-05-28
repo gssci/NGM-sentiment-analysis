@@ -7,10 +7,7 @@ class CharCNN:
                  sequence_max_length=1014, num_quantized_chars=70, num_neighbors=10, alpha1 = 0.2, alpha2 = 0.4):
 
         self.input_x = tf.placeholder(tf.float32, [None, num_quantized_chars, sequence_max_length, 1], name="input_x")
-        self.labels = tf.placeholder(tf.float32, [None, num_quantized_chars, sequence_max_length, 1], name="labels")
-        self.neighbors = tf.placeholder(tf.int16, [None, num_neighbors, num_quantized_chars, sequence_max_length, 1], name="neighbors_x")
-        self.weights = tf.placeholder(tf.float32, [None, num_neighbors])
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
+        dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
 
         # Convolutional Layer 1
         with tf.name_scope("conv-maxpool-1"):

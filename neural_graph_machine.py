@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-from cnn_preprocessing import batch_iter
+from batch import batch_iter
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 len_input = 1014
@@ -11,6 +11,7 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
+
 
 def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
       num_quantized_chars=70, dropout_keep_prob=0.5):
@@ -141,6 +142,10 @@ def train_neural_network():
                             + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
 
             optimizer = tf.train.AdamOptimizer().minimize(loss_function)
+
+            saver = tf.train.Saver()
+            writer = tf.summary.FileWriter('./summary')
+            writer.add_graph(sess.graph)
             sess.run(tf.global_variables_initializer())
 
             batches = batch_iter(batch_size=128,num_epochs=4)
@@ -162,5 +167,9 @@ def train_neural_network():
                                            cu1: c_ull,
                                            cv1: c_vll,
                                            cu2: c_ulu})
+
                 print(str(c))
+            save_path = saver.save(sess, "./model.ckpt")
+            print("Model saved in file: %s" % save_path)
+
 

@@ -20,13 +20,11 @@ FLAGS._parse_flags()
 def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
       num_quantized_chars=70, dropout_keep_prob=0.5):
 
-    with tf.device('/cpu:0'):
-        a = tf.one_hot(
-            indices=input_x,
-            depth=70,
-            axis=1,
-            dtype=tf.float32
-        )
+    a = tf.one_hot(
+        indices=input_x,
+        depth=70,
+        axis=1,
+        dtype=tf.float32)
 
     a = tf.expand_dims(a, 3)
 
@@ -147,8 +145,10 @@ def train_neural_network():
             test_input = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             test_labels = tf.placeholder(tf.float32, [None, 2], name="lull")
 
-            correct_predictions = tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+            correct_predictions = tf.concat(
+                tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1)))
+
+            test_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
             def training_step(h_batch):
                 u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = h_batch
@@ -169,14 +169,14 @@ def train_neural_network():
                                            cv1: c_vll,
                                            cu2: c_ulu})
 
-            def test_step(h_batch):
-                input_x, labels_x = h_batch
-                acc = sess.run(accuracy, feed_dict={
-                    test_input: input_x,
-                    test_labels: labels_x
-                })
-
-                print("Train accuracy: " + str(acc))
+            # def test_step(h_batch):
+            #     input_x, labels_x = h_batch
+            #     acc = sess.run(test_accuracy, feed_dict={
+            #         test_input: input_x,
+            #         test_labels: labels_x
+            #     })
+            #
+            #     print("Train accuracy: " + str(acc))
 
             saver = tf.train.Saver()
             writer = tf.summary.FileWriter('./summary')
@@ -188,11 +188,12 @@ def train_neural_network():
 
             for batch in batches:
                 current_step = tf.train.global_step(sess, global_step)
+                print("Step: " + str(current_step))
+
                 training_step(batch)
 
                 if current_step % FLAGS.evaluate_every == 0:
                     test_step(test_batches.__next__())
-                    print("Step: " + str(current_step))
 
                 if current_step % FLAGS.checkpoint_every == 0:
                     save_path = saver.save(sess, "./model.ckpt", global_step=current_step)

@@ -71,8 +71,8 @@ def next_batch(h_edges, start, finish):
     if len(u2) > 0:
         lu2 = np.vstack([label(u) for u in u_lu])
 
-    u3 = X[[e[0] for e in edges_uu]]
-    v3 = X[[e[1] for e in edges_uu]]
+    #u3 = X[[e[0] for e in edges_uu]]
+    #v3 = X[[e[1] for e in edges_uu]]
 
     #convert to matrix for easier slicing
     # edges_ll = np.asmatrix(edges_ll)
@@ -98,7 +98,7 @@ def next_batch(h_edges, start, finish):
     # u3 = X[edges_uu[:, 0]]
     # v3 = X[edges_uu[:, 1]]
 
-    return u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu
+    return u1, v1, lu1, lv1, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu
 
 
 def batch_iter(batch_size, num_epochs):

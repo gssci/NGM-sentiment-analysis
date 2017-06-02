@@ -138,7 +138,7 @@ def train_neural_network():
                             + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2)) \
                             + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
 
-            optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
+            optimizer = tf.train.AdamOptimizer(1e-3).minimize(loss_function, global_step=global_step)
 
             correct_predictions = tf.concat([tf.equal(tf.argmax(scores_u1, 1), tf.argmax(labels_u1, 1)),
                                              tf.equal(tf.argmax(scores_v1, 1), tf.argmax(labels_v1, 1)),

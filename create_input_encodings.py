@@ -5,6 +5,7 @@ disk for later usage
 import pickle
 import numpy as np
 from bs4 import BeautifulSoup
+import glob
 
 indices_dict = pickle.load(open("./data/graph/indices_dict.p", "rb"))
 data_to_graph_index = {v: k for k, v in indices_dict.items()}
@@ -37,9 +38,10 @@ def string_to_int8_conversion(char_seq):
     char_seq = pad_sentence(char_seq)
     return np.array([alphabet.find(char) for char in char_seq], dtype=np.int8)
 
-if __name__ == '__main__':
+
+def encode_traing_samples():
     n_samples = len(indices_dict.keys())
-    X = np.zeros((n_samples,1014),dtype=np.int8)
+    X = np.zeros((n_samples, 1014), dtype=np.int8)
 
     for i in range(n_samples):
         path = indices_dict.get(i)
@@ -49,5 +51,31 @@ if __name__ == '__main__':
         X[i] = string_to_int8_conversion(input_string)
         print(str(i))
 
-    np.save("./data/train/encoded_samples.npy",X)
+    np.save("./data/train/encoded_samples.npy", X)
 
+
+def encode_test_samples():
+    X_test = np.zeros((25000, 1014), dtype=np.int8)
+    Y_test = np.zeros((25000, 2), dtype=np.int8)
+    i = 0
+
+    for review in glob.glob('./data/test/pos/*.txt'):
+        with open(review, 'r', encoding='utf8') as myfile:
+            data = BeautifulSoup(myfile).get_text()
+
+        X_test[i] = string_to_int8_conversion(data)
+        Y_test[i, 1] = 1
+        print(str(i))
+        i = i+1
+
+    for review in glob.glob('./data/test/neg/*.txt'):
+        with open(review, 'r', encoding='utf8') as myfile:
+            data = BeautifulSoup(myfile).get_text()
+
+        X_test[i] = string_to_int8_conversion(data)
+        Y_test[i, 0] = 1
+        print(str(i))
+        i = i+1
+
+    np.save("./data/test/test_encoded_samples.npy", X_test)
+    np.save("./data/test/test_labels.npy", Y_test)

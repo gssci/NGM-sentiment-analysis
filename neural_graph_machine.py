@@ -10,7 +10,7 @@ len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 500, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -96,7 +96,6 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
         W = tf.Variable(tf.truncated_normal([num_hidden_units, num_classes], stddev=0.05), name="W")
         b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
         scores = tf.nn.xw_plus_b(fc_2_output, W, b, name="output")
-        #predictions = tf.argmax(scores, 1, name="predictions")
 
     return scores
 
@@ -109,7 +108,6 @@ def train_neural_network():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
-            current_loss = tf.Variable(0, name="global_step", trainable=False)
             alpha1 = tf.constant(0.1, dtype=np.float32, name="a1")
             alpha2 = tf.constant(0.1, dtype=np.float32, name="a2")
             alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
@@ -129,54 +127,23 @@ def train_neural_network():
             cv1 = tf.placeholder(tf.float32, [None, ], name="CvLL")
             cu2 = tf.placeholder(tf.float32, [None, ], name="CuLU")
 
-            pred_u1 = g(in_u1)
-            pred_v1 = g(in_v1)
-            pred_u2 = g(in_u2)
+            scores_u1 = g(in_u1)
+            scores_v1 = g(in_v1)
+            scores_u2 = g(in_u2)
 
-            loss_function = tf.reduce_sum(alpha1 * weights_ll * tf.nn.softmax_cross_entropy_with_logits(logits=pred_u1, labels=pred_v1) \
-                            + cu1 * tf.nn.softmax_cross_entropy_with_logits(logits=pred_u1, labels=labels_u1) \
-                            + cv1 * tf.nn.softmax_cross_entropy_with_logits(logits=pred_v1, labels=labels_v1)) \
-                            + tf.reduce_sum(alpha2 * weights_lu * tf.nn.softmax_cross_entropy_with_logits(logits=pred_u2, labels=g(in_v2)) \
-                            + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=pred_u2, labels=labels_u2)) \
+            loss_function = tf.reduce_sum(alpha1 * weights_ll * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=scores_v1) \
+                            + cu1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=labels_u1) \
+                            + cv1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_v1, labels=labels_v1)) \
+                            + tf.reduce_sum(alpha2 * weights_lu * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=g(in_v2)) \
+                            + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2)) \
                             + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
 
             optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
 
-            test_input = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
-            test_labels = tf.placeholder(tf.float32, [None, 2], name="lull")
-
-            correct_predictions = tf.concat(
-                tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1)))
-
-            test_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
-
-            def training_step(h_batch):
-                u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = h_batch
-                _, c = sess.run([optimizer, loss_function],
-                                feed_dict={in_u1: u1,
-                                           in_v1: v1,
-                                           in_u2: u2,
-                                           in_v2: v2,
-                                           in_u3: u3,
-                                           in_v3: v3,
-                                           labels_u1: lu1,
-                                           labels_v1: lv1,
-                                           labels_u2: lu2,
-                                           weights_ll: w_ll,
-                                           weights_lu: w_lu,
-                                           weights_uu: w_uu,
-                                           cu1: c_ull,
-                                           cv1: c_vll,
-                                           cu2: c_ulu})
-
-            # def test_step(h_batch):
-            #     input_x, labels_x = h_batch
-            #     acc = sess.run(test_accuracy, feed_dict={
-            #         test_input: input_x,
-            #         test_labels: labels_x
-            #     })
-            #
-            #     print("Train accuracy: " + str(acc))
+            correct_predictions = tf.concat([tf.equal(tf.argmax(scores_u1, 1), tf.argmax(labels_u1, 1)),
+                                             tf.equal(tf.argmax(scores_v1, 1), tf.argmax(labels_v1, 1)),
+                                             tf.equal(tf.argmax(scores_u2, 1), tf.argmax(labels_u2, 1))],axis=0)
+            train_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
             saver = tf.train.Saver()
             writer = tf.summary.FileWriter('./summary')
@@ -184,16 +151,30 @@ def train_neural_network():
             sess.run(tf.global_variables_initializer())
 
             batches = batch_iter(batch_size=128,num_epochs=20)
-            test_batches = test_batch_inter(batch_size=128)
 
             for batch in batches:
                 current_step = tf.train.global_step(sess, global_step)
-                print("Step: " + str(current_step))
 
-                training_step(batch)
+                u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+                _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
+                                        feed_dict={in_u1: u1,
+                                                   in_v1: v1,
+                                                   in_u2: u2,
+                                                   in_v2: v2,
+                                                   in_u3: u3,
+                                                   in_v3: v3,
+                                                   labels_u1: lu1,
+                                                   labels_v1: lv1,
+                                                   labels_u2: lu2,
+                                                   weights_ll: w_ll,
+                                                   weights_lu: w_lu,
+                                                   weights_uu: w_uu,
+                                                   cu1: c_ull,
+                                                   cv1: c_vll,
+                                                   cu2: c_ulu})
 
                 if current_step % FLAGS.evaluate_every == 0:
-                    test_step(test_batches.__next__())
+                    print("Step: " + str(current_step) + " Train Batch Acc.: " + str(acc) + " Train Loss: " + str(loss))
 
                 if current_step % FLAGS.checkpoint_every == 0:
                     save_path = saver.save(sess, "./model.ckpt", global_step=current_step)

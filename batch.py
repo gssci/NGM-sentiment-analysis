@@ -9,9 +9,9 @@ X = np.load("./data/train/encoded_samples.npy")
 
 def label(i):
     if 0 <= i < 12500:
-        return np.array([1, 0])
+        return np.array([0, 1]) #pos
     else:
-        return np.array([0, 1])
+        return np.array([1, 0]) #neg
 
 
 def next_batch(h_edges, start, finish):
@@ -65,12 +65,11 @@ def next_batch(h_edges, start, finish):
     u_lu = [e[0] for e in edges_lu]
     c_ulu = [1 / len(sub_elu.edges(u)) for u in u_lu]
     u2 = X[u_lu]
+    v2 = X[[e[1] for e in edges_lu]]
 
     lu2 = np.zeros((1,2))
     if len(u2) > 0:
         lu2 = np.vstack([label(u) for u in u_lu])
-
-    v2 = X[[e[1] for e in edges_lu]]
 
     u3 = X[[e[0] for e in edges_uu]]
     v3 = X[[e[1] for e in edges_uu]]
@@ -139,19 +138,24 @@ def batch_iter(batch_size, num_epochs):
             yield next_batch(helper_edges,start_index,end_index)
 
 
-def test_batch_inter(batch_size):
-    data = X[0:25000] #labeled subset of data
-    shuffle_indices = np.random.permutation(range(0,25000))
+def test_batch_inter(batch_size=128):
+    """
+    batch iterator for test data with labels
+    """
+    test_samples = np.load("./data/test/test_encoded_samples.npy")
+    test_labels = np.load("./data/test/test_labels.npy")
+    len_data = len(test_labels)
+    shuffle_indices = np.random.permutation(range(len_data))
 
-    num_batches = int(25000 / batch_size) + 1
+    num_batches = int(len_data / batch_size) + 1
 
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size
-        end_index = min((batch_num + 1) * batch_size, 25000)
+        end_index = min((batch_num + 1) * batch_size, len_data)
 
         batch_indices = shuffle_indices[start_index:end_index]
-        input_x = data[batch_indices]
-        labels = [label(i) for i in batch_indices]
+        input_x = test_samples[batch_indices]
+        labels = test_labels[batch_indices]
         yield input_x, labels
 
 

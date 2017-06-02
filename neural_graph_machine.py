@@ -173,7 +173,7 @@ def train_neural_network():
 
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Step: " + str(current_step) + " Train Batch Acc.: " + str(acc) +
-                          " Train Loss: " + str(loss)) + " alpha1=" + str(a1) + " alpha2=" + str(a2)
+                          " Train Loss: " + str(loss) + " alpha1=" + str(a1) + " alpha2=" + str(a2))
 
                 if current_step % FLAGS.checkpoint_every == 0:
                     save_path = saver.save(sess, "./model.ckpt", global_step=current_step)

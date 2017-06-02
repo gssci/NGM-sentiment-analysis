@@ -8,7 +8,7 @@ len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 10, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -154,6 +154,7 @@ def train_neural_network():
 
                 batches = batch_iter(batch_size=128)
                 accs = list()
+                save_path = saver.save(sess, "./model.ckpt")
 
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
@@ -182,7 +183,3 @@ def train_neural_network():
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
                               " | Train Loss: " + str(loss))
-
-                    if current_step % FLAGS.checkpoint_every == 0:
-                        save_path = saver.save(sess, "./model.ckpt")
-                        print("Model saved in file: %s" % save_path)

@@ -25,7 +25,7 @@ last_index_l = 25000
 last_index_u = 75000
 
 # we only keep the closest neighbors
-max_neighs = 10
+max_neighs = 5
 size = M.shape[0]
 
 

@@ -1,13 +1,17 @@
+from locale import currency
+
 import tensorflow as tf
 import numpy as np
 import os
-from batch import batch_iter
+from batch import batch_iter, test_batch_inter
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+tf.flags.DEFINE_integer("evaluate_every", 500, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -100,20 +104,17 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
 
 
 def train_neural_network():
-    """
-    :param x: index of sample
-    :return: 
-    """
-
     with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
             allow_soft_placement=FLAGS.allow_soft_placement,
             log_device_placement=FLAGS.log_device_placement)
         sess = tf.Session(config=session_conf)
         with sess.as_default():
-            alpha1 = tf.constant(0.4, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(0.3, dtype=np.float32, name="a2")
-            alpha3 = tf.constant(0.15, dtype=np.float32, name="a3")
+            global_step = tf.Variable(0, name='global_step', trainable=False)
+            current_loss = tf.Variable(0, name="global_step", trainable=False)
+            alpha1 = tf.constant(0.1, dtype=np.float32, name="a1")
+            alpha2 = tf.constant(0.1, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
             in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
@@ -141,16 +142,16 @@ def train_neural_network():
                             + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=pred_u2, labels=labels_u2)) \
                             + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
 
-            optimizer = tf.train.AdamOptimizer().minimize(loss_function)
+            optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
 
-            saver = tf.train.Saver()
-            writer = tf.summary.FileWriter('./summary')
-            writer.add_graph(sess.graph)
-            sess.run(tf.global_variables_initializer())
+            test_input = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
+            test_labels = tf.placeholder(tf.float32, [None, 2], name="lull")
 
-            batches = batch_iter(batch_size=128,num_epochs=4)
-            for batch in batches:
-                u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+            correct_predictions = tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+
+            def training_step(h_batch):
+                u1, v1, lu1, lv1, u2, v2, lu2, u3, v3, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = h_batch
                 _, c = sess.run([optimizer, loss_function],
                                 feed_dict={in_u1: u1,
                                            in_v1: v1,
@@ -168,8 +169,31 @@ def train_neural_network():
                                            cv1: c_vll,
                                            cu2: c_ulu})
 
-                print(str(c))
-            save_path = saver.save(sess, "./model.ckpt")
-            print("Model saved in file: %s" % save_path)
+            def test_step(h_batch):
+                input_x, labels_x = h_batch
+                acc = sess.run(accuracy, feed_dict={
+                    test_input: input_x,
+                    test_labels: labels_x
+                })
 
+                print("Train accuracy: " + str(acc))
 
+            saver = tf.train.Saver()
+            writer = tf.summary.FileWriter('./summary')
+            writer.add_graph(sess.graph)
+            sess.run(tf.global_variables_initializer())
+
+            batches = batch_iter(batch_size=128,num_epochs=2)
+            test_batches = test_batch_inter(batch_size=128)
+
+            for batch in batches:
+                current_step = tf.train.global_step(sess, global_step)
+                training_step(batch)
+
+                if current_step % FLAGS.evaluate_every == 0:
+                    test_step(test_batches.__next__())
+                    print("Step: " + str(current_step))
+
+                if current_step % FLAGS.checkpoint_every == 0:
+                    save_path = saver.save(sess, "./model.ckpt", global_step=current_step)
+                    print("Model saved in file: %s" % save_path)

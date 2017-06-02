@@ -101,41 +101,39 @@ def next_batch(h_edges, start, finish):
     return u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu
 
 
-def batch_iter(batch_size, num_epochs):
+def batch_iter(batch_size):
     """
         Generates a batch iterator for the dataset.
     """
     # data = np.array(data)
 
     data_size = len(graph.edges())
-    num_batches_per_epoch = int(data_size / batch_size) + 1
-    for epoch in range(num_epochs):
-        print("==== Epoch: " + str(epoch + 1) + " ====")
+    num_batches = int(data_size / batch_size) + 1
 
-        # Shuffle the data at each epoch
-        # Partition the graph into neighbourhood regions
-        # and shuffle edges
-        partitions = list()
-        visited = set()
-        for node in graph.nodes():
-            if node not in visited:
-                adjacent_edges = graph.edges(node)
-                partitions.append(adjacent_edges)
-                for u, v in adjacent_edges:
-                    visited.add(u)
-                    visited.add(v)
+    # Shuffle the data at each epoch
+    # Partition the graph into neighbourhood regions
+    # and shuffle edges
+    partitions = list()
+    visited = set()
+    for node in graph.nodes():
+        if node not in visited:
+            adjacent_edges = graph.edges(node)
+            partitions.append(adjacent_edges)
+            for u, v in adjacent_edges:
+                visited.add(u)
+                visited.add(v)
 
-        random.shuffle(partitions)
+    random.shuffle(partitions)
 
-        for partition in partitions:
-            random.shuffle(partition)
+    for partition in partitions:
+        random.shuffle(partition)
 
-        helper_edges = [val for sublist in partitions for val in sublist]
+    helper_edges = [val for sublist in partitions for val in sublist]
 
-        for batch_num in range(num_batches_per_epoch):
-            start_index = batch_num * batch_size
-            end_index = min((batch_num + 1) * batch_size, data_size)
-            yield next_batch(helper_edges,start_index,end_index)
+    for batch_num in range(num_batches):
+        start_index = batch_num * batch_size
+        end_index = min((batch_num + 1) * batch_size, data_size)
+        yield next_batch(helper_edges,start_index,end_index)
 
 
 def test_batch_inter(batch_size=128):

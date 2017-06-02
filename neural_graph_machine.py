@@ -1,5 +1,3 @@
-from locale import currency
-
 import tensorflow as tf
 import numpy as np
 import os

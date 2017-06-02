@@ -8,7 +8,7 @@ len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 10, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -148,33 +148,41 @@ def train_neural_network():
             writer.add_graph(sess.graph)
             sess.run(tf.global_variables_initializer())
 
-            batches = batch_iter(batch_size=128,num_epochs=20)
+            num_epochs = 50
+            for epoch in range(num_epochs):
+                print("======== EPOCH " + str(epoch + 1) + " ========")
 
-            for batch in batches:
-                current_step = tf.train.global_step(sess, global_step)
+                batches = batch_iter(batch_size=128)
+                accs = list()
 
-                u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
-                _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
-                                        feed_dict={in_u1: u1,
-                                                   in_v1: v1,
-                                                   in_u2: u2,
-                                                   in_v2: v2,
-                                                   in_u3: u3,
-                                                   in_v3: v3,
-                                                   labels_u1: lu1,
-                                                   labels_v1: lv1,
-                                                   labels_u2: lu2,
-                                                   weights_ll: w_ll,
-                                                   weights_lu: w_lu,
-                                                   weights_uu: w_uu,
-                                                   cu1: c_ull,
-                                                   cv1: c_vll,
-                                                   cu2: c_ulu})
+                for batch in batches:
+                    current_step = tf.train.global_step(sess, global_step)
 
-                if current_step % FLAGS.evaluate_every == 0:
-                    print("Step: " + str(current_step) + " Train Batch Acc.: " + str(acc) +
-                          " Train Loss: " + str(loss))
+                    u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+                    _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
+                                            feed_dict={in_u1: u1,
+                                                       in_v1: v1,
+                                                       in_u2: u2,
+                                                       in_v2: v2,
+                                                       in_u3: u3,
+                                                       in_v3: v3,
+                                                       labels_u1: lu1,
+                                                       labels_v1: lv1,
+                                                       labels_u2: lu2,
+                                                       weights_ll: w_ll,
+                                                       weights_lu: w_lu,
+                                                       weights_uu: w_uu,
+                                                       cu1: c_ull,
+                                                       cv1: c_vll,
+                                                       cu2: c_ulu})
+                    accs.append(acc)
 
-                if current_step % FLAGS.checkpoint_every == 0:
-                    save_path = saver.save(sess, "./model.ckpt")
-                    print("Model saved in file: %s" % save_path)
+                    if current_step % FLAGS.evaluate_every == 0:
+                        print("Step: " + str(current_step) +
+                              " | Last Batch Accuracy: " + str(acc) +
+                              " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
+                              " | Train Loss: " + str(loss))
+
+                    if current_step % FLAGS.checkpoint_every == 0:
+                        save_path = saver.save(sess, "./model.ckpt")
+                        print("Model saved in file: %s" % save_path)

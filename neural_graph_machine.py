@@ -154,7 +154,7 @@ def train_neural_network():
                 current_step = tf.train.global_step(sess, global_step)
 
                 u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
-                _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
+                _, loss, acc, a1 = sess.run([optimizer, loss_function, train_accuracy, alpha1],
                                         feed_dict={in_u1: u1,
                                                    in_v1: v1,
                                                    in_u2: u2,
@@ -173,8 +173,8 @@ def train_neural_network():
 
                 if current_step % FLAGS.evaluate_every == 0:
                     print("Step: " + str(current_step) + " Train Batch Acc.: " + str(acc) +
-                          " Train Loss: " + str(loss))
+                          " Train Loss: " + str(loss) + " " + str(a1))
 
                 if current_step % FLAGS.checkpoint_every == 0:
-                    save_path = saver.save(sess, "./model.ckpt", global_step=current_step)
+                    save_path = saver.save(sess, "./model.ckpt")
                     print("Model saved in file: %s" % save_path)

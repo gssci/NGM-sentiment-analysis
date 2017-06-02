@@ -52,13 +52,13 @@ def next_batch(h_edges, start, finish):
     c_vll = [1 / len(sub_ell.edges(v)) for v in v_ll]
     u1 = X[u_ll]
 
-    lu1 = np.zeros((1,2))
+    lu1 = np.zeros((0,2))
     if len(u1) > 0:
         lu1 = np.vstack([label(u) for u in u_ll])
 
     v1 = X[v_ll]
 
-    lv1 = np.zeros((1,2))
+    lv1 = np.zeros((0,2))
     if len(v1) > 0:
         lv1 = np.vstack([label(v) for v in v_ll])
 
@@ -67,7 +67,7 @@ def next_batch(h_edges, start, finish):
     u2 = X[u_lu]
     v2 = X[[e[1] for e in edges_lu]]
 
-    lu2 = np.zeros((1,2))
+    lu2 = np.zeros((0,2))
     if len(u2) > 0:
         lu2 = np.vstack([label(u) for u in u_lu])
 

@@ -14,21 +14,21 @@ class EmbeddingsGraph:
         self.edges_ll = pickle.load(open("./data/graph/edges_ll.p", "rb"))
         self.edges_lu = pickle.load(open("./data/graph/edges_lu.p", "rb"))
         self.edges_uu = pickle.load(open("./data/graph/edges_uu.p", "rb"))
-        self.edges = self.edges_ll + self.edges_lu + self.edges_uu
+        self.edges = self.edges_ll + self.edges_lu #+ self.edges_uu
         self.indices_dict = pickle.load(open("./data/graph/indices_dict.p", "rb"))
         self.edges_weights = pickle.load(open("./data/graph/edges_weights.p", "rb"))
 
         for (u,v) in self.edges:
             self.G.add_edge(u,v,weight=self.edges_weights.get((u,v)))
 
-        for (u,v) in self.edges_ll:
-            self.ELL.add_edge(u,v,weight=self.edges_weights.get((u,v)))
-
-        for (u,v) in self.edges_lu:
-            self.ELU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
-
-        for (u,v) in self.edges_uu:
-            self.EUU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
+        # for (u,v) in self.edges_ll:
+        #     self.ELL.add_edge(u,v,weight=self.edges_weights.get((u,v)))
+        #
+        # for (u,v) in self.edges_lu:
+        #     self.ELU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
+        #
+        # for (u,v) in self.edges_uu:
+        #     self.EUU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
 
 
     def weight(self,u,v):

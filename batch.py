@@ -34,12 +34,12 @@ def next_batch(h_edges, start, finish):
         if (0 <= i < 25000) and (0 <= j < 25000):
             edges_ll.append((i, j))
             w_ll.append(graph.get_edge_data(i,j)['weight'])
-        elif (0 <= i < 25000) and (25000 <= j < 75000):
+        else: #(0 <= i < 25000) and (25000 <= j < 75000):
             edges_lu.append((i, j))
             w_lu.append(graph.get_edge_data(i,j)['weight'])
-        else:
-            edges_uu.append((i, j))
-            w_uu.append(graph.get_edge_data(i,j)['weight'])
+        # else:
+        #     edges_uu.append((i, j))
+        #     w_uu.append(graph.get_edge_data(i,j)['weight'])
 
     sub_ell = nx.Graph(data=edges_ll)
     sub_elu = nx.Graph(data=edges_lu)

@@ -106,15 +106,15 @@ def train_neural_network():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
-            alpha1 = tf.constant(0.0, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(0.0, dtype=np.float32, name="a2")
-            #alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
+            alpha1 = tf.constant(0.25, dtype=np.float32, name="a1")
+            alpha2 = tf.constant(0.25, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(0.15, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
             in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
             in_v2 = tf.placeholder(tf.int32, [None, len_input, ], name="vlu")
-            #in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-            #in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+            in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+            in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
             labels_u1 = tf.placeholder(tf.float32, [None, 2], name="lull")
             labels_v1 = tf.placeholder(tf.float32, [None, 2], name="lvll")
             labels_u2 = tf.placeholder(tf.float32, [None, 2], name="lulu")
@@ -133,8 +133,8 @@ def train_neural_network():
                             + cu1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=labels_u1) \
                             + cv1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_v1, labels=labels_v1)) \
                             + tf.reduce_mean(alpha2 * weights_lu * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=g(in_v2)) \
-                            + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2))
-                            #+ tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
+                            + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2)) \
+                            + tf.reduce_mean(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
 
             optimizer = tf.train.AdamOptimizer(1e-3).minimize(loss_function, global_step=global_step)
 
@@ -153,14 +153,14 @@ def train_neural_network():
             for batch in batches:
                 current_step = tf.train.global_step(sess, global_step)
 
-                u1, v1, lu1, lv1, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+                u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
                 _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
                                         feed_dict={in_u1: u1,
                                                    in_v1: v1,
                                                    in_u2: u2,
                                                    in_v2: v2,
-                                                   #in_u3: u3,
-                                                   #in_v3: v3,
+                                                   in_u3: u3,
+                                                   in_v3: v3,
                                                    labels_u1: lu1,
                                                    labels_v1: lv1,
                                                    labels_u2: lu2,

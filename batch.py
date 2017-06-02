@@ -107,33 +107,35 @@ def batch_iter(batch_size):
     """
     # data = np.array(data)
 
-    data_size = len(graph.edges())
-    num_batches = int(data_size / batch_size) + 1
-
     # Shuffle the data at each epoch
     # Partition the graph into neighbourhood regions
     # and shuffle edges
-    partitions = list()
-    visited = set()
-    for node in graph.nodes():
-        if node not in visited:
-            adjacent_edges = graph.edges(node)
-            partitions.append(adjacent_edges)
-            for u, v in adjacent_edges:
-                visited.add(u)
-                visited.add(v)
+    # partitions = list()
+    # visited = set()
+    # for node in graph.nodes():
+    #     if node not in visited:
+    #         adjacent_edges = graph.edges(node)
+    #         partitions.append(adjacent_edges)
+    #         for u, v in adjacent_edges:
+    #             visited.add(u)
+    #
+    # random.shuffle(partitions)
+    #
+    # for partition in partitions:
+    #     random.shuffle(partition)
+    #
+    # helper_edges = [val for sublist in partitions for val in sublist]
 
-    random.shuffle(partitions)
+    data_size = len(graph.edges())
 
-    for partition in partitions:
-        random.shuffle(partition)
+    edges = np.random.permutation(graph.edges())
 
-    helper_edges = [val for sublist in partitions for val in sublist]
+    num_batches = int(data_size / batch_size) + 1
 
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size
         end_index = min((batch_num + 1) * batch_size, data_size)
-        yield next_batch(helper_edges,start_index,end_index)
+        yield next_batch(edges,start_index,end_index)
 
 
 def test_batch_inter(batch_size=128):
@@ -155,6 +157,3 @@ def test_batch_inter(batch_size=128):
         input_x = test_samples[batch_indices]
         labels = test_labels[batch_indices]
         yield input_x, labels
-
-
-

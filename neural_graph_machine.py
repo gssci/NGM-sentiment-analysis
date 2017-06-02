@@ -154,8 +154,7 @@ def train_neural_network():
 
                 batches = batch_iter(batch_size=128)
                 accs = list()
-                save_path = saver.save(sess, "./model.ckpt")
-
+                
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
 
@@ -183,3 +182,7 @@ def train_neural_network():
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
                               " | Train Loss: " + str(loss))
+
+                    if current_step % FLAGS.checkpoint_every == 0:
+                        save_path = saver.save(sess, "./model.ckpt")
+                        print('***Checkpoint, Model Saved***')

@@ -183,7 +183,7 @@ def train_neural_network():
             writer.add_graph(sess.graph)
             sess.run(tf.global_variables_initializer())
 
-            batches = batch_iter(batch_size=128,num_epochs=2)
+            batches = batch_iter(batch_size=128,num_epochs=20)
             test_batches = test_batch_inter(batch_size=128)
 
             for batch in batches:

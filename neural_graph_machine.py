@@ -8,7 +8,7 @@ len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 10, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -143,6 +143,11 @@ def train_neural_network():
                                              tf.equal(tf.argmax(scores_u2, 1), tf.argmax(labels_u2, 1))],axis=0)
             train_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
+            test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
+            test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
+
+            test_accuracy = tf.reduce_mean(tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1)))
+
             saver = tf.train.Saver()
             writer = tf.summary.FileWriter('./summary')
             writer.add_graph(sess.graph)
@@ -154,6 +159,8 @@ def train_neural_network():
 
                 batches = batch_iter(batch_size=128)
                 accs = list()
+                test_accs = list()
+                test_batches = test_batch_inter(256)
 
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
@@ -178,10 +185,18 @@ def train_neural_network():
                     accs.append(acc)
 
                     if current_step % FLAGS.evaluate_every == 0:
+                        t_batch = test_batches.__next__()
+                        test_acc = sess.run(test_accuracy, feed_dict={
+                            test_input: t_batch[0],
+                            test_labels: t_batch[1]
+                        })
+                        test_accs.append(test_acc)
                         print("Step: " + str(current_step) +
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
+                              " | Test Accuracy: " + str(np.mean(test_accs)) +
                               " | Train Loss: " + str(loss))
+
 
                     if current_step % FLAGS.checkpoint_every == 0:
                         save_path = saver.save(sess, "./model.ckpt")

@@ -15,7 +15,7 @@ FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
 
-def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
+def g(input_x,num_classes=2, filter_sizes=(7, 7, 3, 3, 3, 3), frame_size=256, num_hidden_units=1024,
       num_quantized_chars=70, dropout_keep_prob=0.5):
 
     a = tf.one_hot(
@@ -54,12 +54,33 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
             padding='VALID',
             name="pool2")
 
-    # Convolutional Layer 3
-    with tf.variable_scope("conv-maxpool-3"):
+    with tf.variable_scope("conv-3"):
         filter_shape = [1, filter_sizes[2], frame_size, frame_size]
         W = tf.get_variable("W", shape=filter_shape, initializer=tf.random_normal_initializer(stddev=0.05))
         b = tf.get_variable("b", shape=[frame_size], initializer=tf.constant_initializer(0.1))
         conv = tf.nn.conv2d(pooled, W, strides=[1, 1, 1, 1], padding="VALID", name="conv3")
+        h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+
+    with tf.variable_scope("conv-4"):
+        filter_shape = [1, filter_sizes[3], frame_size, frame_size]
+        W = tf.get_variable("W", shape=filter_shape, initializer=tf.random_normal_initializer(stddev=0.05))
+        b = tf.get_variable("b", shape=[frame_size], initializer=tf.constant_initializer(0.1))
+        conv = tf.nn.conv2d(h, W, strides=[1, 1, 1, 1], padding="VALID", name="conv4")
+        h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+
+    with tf.variable_scope("conv-5"):
+        filter_shape = [1, filter_sizes[4], frame_size, frame_size]
+        W = tf.get_variable("W", shape=filter_shape, initializer=tf.random_normal_initializer(stddev=0.05))
+        b = tf.get_variable("b", shape=[frame_size], initializer=tf.constant_initializer(0.1))
+        conv = tf.nn.conv2d(h, W, strides=[1, 1, 1, 1], padding="VALID", name="conv5")
+        h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
+
+    # Convolutional Layer 3
+    with tf.variable_scope("conv-maxpool-6"):
+        filter_shape = [1, filter_sizes[5], frame_size, frame_size]
+        W = tf.get_variable("W", shape=filter_shape, initializer=tf.random_normal_initializer(stddev=0.05))
+        b = tf.get_variable("b", shape=[frame_size], initializer=tf.constant_initializer(0.1))
+        conv = tf.nn.conv2d(h, W, strides=[1, 1, 1, 1], padding="VALID", name="conv6")
         h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
         pooled = tf.nn.max_pool(
             h,
@@ -69,7 +90,7 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
             name="pool3")
 
     # Fully-connected Layer 1
-    num_features_total = 36 * frame_size
+    num_features_total = 34 * frame_size
     h_pool_flat = tf.reshape(pooled, [-1, num_features_total])
 
     with tf.name_scope("dropout-1"):
@@ -168,7 +189,7 @@ def train_neural_network():
                 batches = batch_iter(batch_size=128)
                 accs = list()
                 test_accs = list()
-                test_batches = test_batch_inter(512)
+                test_batches = test_batch_inter(256)
 
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
@@ -205,6 +226,5 @@ def train_neural_network():
                               " | Test Accuracy: " + str(np.mean(test_accs)) +
                               " | Train Loss: " + str(loss))
 
-
                     if current_step % FLAGS.checkpoint_every == 0:
-                        saver.save(sess, "./model.ckpt")
+                        saver.save(sess, "./model-complex.ckpt")

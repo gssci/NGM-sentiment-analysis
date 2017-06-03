@@ -21,11 +21,11 @@ from operator import mul
 L = sp.sparse.load_npz('./data/graph/labeled.npz')
 U = sp.sparse.load_npz('./data/graph/unlabeled.npz')
 M = sp.sparse.vstack([L,U])
-last_index_l = 25000
-last_index_u = 75000
+last_index_l = 37500
+last_index_u = 87500
 
 # we only keep the closest neighbors
-max_neighs = 5
+max_neighs = 10
 size = M.shape[0]
 
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     lock = Lock()
 
     processes = []
-    num_of_cpu = cpu_count()
+    num_of_cpu = 16
 
     chunks = split_load(size,num_of_cpu)
 

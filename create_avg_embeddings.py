@@ -17,7 +17,7 @@ model = gensim.models.KeyedVectors.load_word2vec_format('./word2vec_model/Google
 
 # the elements of both matrices below constitute the nodes of our graph
 # matrix of labeled embeddings
-L = sp.sparse.lil_matrix((25000,300))
+L = sp.sparse.lil_matrix((37500,300))
 
 # matrix of unlabeled embeddings
 U = sp.sparse.lil_matrix((50000,300))

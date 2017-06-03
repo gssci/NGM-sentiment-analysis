@@ -129,14 +129,14 @@ def train_neural_network():
             scores_v1 = g(in_v1)
             scores_u2 = g(in_u2)
 
-            loss_function = tf.reduce_mean(alpha1 * weights_ll * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=scores_v1) \
+            loss_function = tf.reduce_sum(alpha1 * weights_ll * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=tf.nn.softmax(scores_v1)) \
                             + cu1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u1, labels=labels_u1) \
                             + cv1 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_v1, labels=labels_v1)) \
-                            + tf.reduce_mean(alpha2 * weights_lu * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=g(in_v2)) \
+                            + tf.reduce_sum(alpha2 * weights_lu * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=tf.nn.softmax(g(in_v2))) \
                             + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2)) \
-                            + tf.reduce_mean(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=g(in_v3)))
+                            + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=g(in_u3), labels=tf.nn.softmax(g(in_v3))))
 
-            optimizer = tf.train.AdamOptimizer(1e-3).minimize(loss_function, global_step=global_step)
+            optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
 
             correct_predictions = tf.concat([tf.equal(tf.argmax(scores_u1, 1), tf.argmax(labels_u1, 1)),
                                              tf.equal(tf.argmax(scores_v1, 1), tf.argmax(labels_v1, 1)),
@@ -146,15 +146,15 @@ def train_neural_network():
             saver = tf.train.Saver()
             writer = tf.summary.FileWriter('./summary')
             writer.add_graph(sess.graph)
-            sess.run(tf.global_variables_initializer())
-
-            num_epochs = 50
+            #sess.run(tf.global_variables_initializer())
+            saver.restore(sess, "./model2/model.ckpt")
+            num_epochs = 10
             for epoch in range(num_epochs):
                 print("======== EPOCH " + str(epoch + 1) + " ========")
 
                 batches = batch_iter(batch_size=128)
                 accs = list()
-                
+
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
 
@@ -185,4 +185,4 @@ def train_neural_network():
 
                     if current_step % FLAGS.checkpoint_every == 0:
                         save_path = saver.save(sess, "./model.ckpt")
-                        print('***Checkpoint, Model Saved***')
+            #save_path = saver.save(sess, "./model.ckpt")

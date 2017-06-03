@@ -146,7 +146,8 @@ def train_neural_network():
             test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
             test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
 
-            test_accuracy = tf.reduce_mean(tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1)))
+            test_cp = tf.equal(tf.argmax(g(test_input, dropout_keep_prob=1.0), 1), tf.argmax(test_labels, 1))
+            test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
 
             saver = tf.train.Saver()
             writer = tf.summary.FileWriter('./summary')

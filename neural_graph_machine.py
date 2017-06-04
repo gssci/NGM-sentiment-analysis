@@ -14,6 +14,29 @@ tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many st
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
+global_step = tf.Variable(0, name='global_step', trainable=False)
+alpha1 = tf.constant(1, dtype=np.float32, name="a1")
+alpha2 = tf.constant(1, dtype=np.float32, name="a2")
+alpha3 = tf.constant(1, dtype=np.float32, name="a3")
+in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
+in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
+in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+in_v2 = tf.placeholder(tf.int32, [None, len_input, ], name="vlu")
+in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+labels_u1 = tf.placeholder(tf.float32, [None, 2], name="lull")
+labels_v1 = tf.placeholder(tf.float32, [None, 2], name="lvll")
+labels_u2 = tf.placeholder(tf.float32, [None, 2], name="lulu")
+weights_ll = tf.placeholder(tf.float32, [None, ], name="wll")
+weights_lu = tf.placeholder(tf.float32, [None, ], name="wlu")
+weights_uu = tf.placeholder(tf.float32, [None, ], name="wuu")
+cu1 = tf.placeholder(tf.float32, [None, ], name="CuLL")
+cv1 = tf.placeholder(tf.float32, [None, ], name="CvLL")
+cu2 = tf.placeholder(tf.float32, [None, ], name="CuLU")
+test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
+test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
+
+saver = tf.train.Saver()
 
 def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
       num_quantized_chars=70, dropout_keep_prob=0.5):
@@ -97,35 +120,35 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
 
     return scores
 
+def test_nn():
+    sess = tf.Session()
+
+    saver.restore(sess, './model82p/model.ckpt')
+
+    predictions = g(test_input)
+    correct_predictions = tf.concat(tf.equal(tf.argmax(predictions, 1), tf.argmax(test_labels, 1)), axis=0)
+    accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+
+    accs = list()
+
+    batches = test_batch_inter(500)
+
+    for batch in batches:
+        a = sess.run(accuracy,feed_dict={
+            test_input: batch[0],
+            test_labels: batch[1]
+        })
+
+        accs.append(a)
+
+    return np.mean(accs)
 
 def train_neural_network():
-    with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
             allow_soft_placement=FLAGS.allow_soft_placement,
             log_device_placement=FLAGS.log_device_placement)
-        sess = tf.Session(config=session_conf)
-        with sess.as_default():
-            global_step = tf.Variable(0, name='global_step', trainable=False)
-            alpha1 = tf.constant(1, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(1, dtype=np.float32, name="a2")
-            alpha3 = tf.constant(1, dtype=np.float32, name="a3")
-            in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
-            in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
-            in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-            in_v2 = tf.placeholder(tf.int32, [None, len_input, ], name="vlu")
-            in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-            in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-            labels_u1 = tf.placeholder(tf.float32, [None, 2], name="lull")
-            labels_v1 = tf.placeholder(tf.float32, [None, 2], name="lvll")
-            labels_u2 = tf.placeholder(tf.float32, [None, 2], name="lulu")
-            weights_ll = tf.placeholder(tf.float32, [None, ], name="wll")
-            weights_lu = tf.placeholder(tf.float32, [None, ], name="wlu")
-            weights_uu = tf.placeholder(tf.float32, [None, ], name="wuu")
-            cu1 = tf.placeholder(tf.float32, [None, ], name="CuLL")
-            cv1 = tf.placeholder(tf.float32, [None, ], name="CvLL")
-            cu2 = tf.placeholder(tf.float32, [None, ], name="CuLU")
-            test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
-            test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
+
+        with tf.Session(config=session_conf) as sess:
 
             with tf.variable_scope("ngm") as scope:
                 scores_u1 = g(in_u1)
@@ -151,12 +174,10 @@ def train_neural_network():
                                              tf.equal(tf.argmax(scores_u2, 1), tf.argmax(labels_u2, 1))],axis=0)
             train_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
-            saver = tf.train.Saver()
-
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
-            #saver.restore(sess, "./model/model.ckpt")
-            sess.run(tf.global_variables_initializer())
+            saver.restore(sess, "./model/model.ckpt")
+            #sess.run(tf.global_variables_initializer())
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)

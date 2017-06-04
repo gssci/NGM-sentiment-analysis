@@ -135,7 +135,7 @@ with tf.Graph().as_default():
             scores_v3 = g(in_v3)
             test_scores = g(test_input, dropout_keep_prob=1.0)
             def evaluate_user_input(in_x):
-                scores_x = sess.run(scores_u1, feed_dict={
+                scores_x = sess.run(tf.nn.softmax(scores_u1), feed_dict={
                     in_u1: in_x
                 })
                 return scores_x
@@ -165,5 +165,13 @@ with tf.Graph().as_default():
             input_string = input("Enter input to evaluate: ")
             encoded_input = np.zeros(shape=(1,1014), dtype=np.int32)
             encoded_input[0] = string_to_int8_conversion(input_string)
-            result = evaluate_user_input(encoded_input)
-            print(str(result))
+            result = evaluate_user_input(encoded_input)[0]
+
+            s = ['Negative', 'Positive']
+
+            print(s[np.argmax(result)])
+
+            print("P(Positive) = " + str(result[1]))
+            print("P(Negative) = " + str(result[0]))
+
+

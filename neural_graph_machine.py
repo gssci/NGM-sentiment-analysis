@@ -8,35 +8,12 @@ len_input = 1014
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 2, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-global_step = tf.Variable(0, name='global_step', trainable=False)
-alpha1 = tf.constant(1, dtype=np.float32, name="a1")
-alpha2 = tf.constant(1, dtype=np.float32, name="a2")
-alpha3 = tf.constant(1, dtype=np.float32, name="a3")
-in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
-in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
-in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-in_v2 = tf.placeholder(tf.int32, [None, len_input, ], name="vlu")
-in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
-labels_u1 = tf.placeholder(tf.float32, [None, 2], name="lull")
-labels_v1 = tf.placeholder(tf.float32, [None, 2], name="lvll")
-labels_u2 = tf.placeholder(tf.float32, [None, 2], name="lulu")
-weights_ll = tf.placeholder(tf.float32, [None, ], name="wll")
-weights_lu = tf.placeholder(tf.float32, [None, ], name="wlu")
-weights_uu = tf.placeholder(tf.float32, [None, ], name="wuu")
-cu1 = tf.placeholder(tf.float32, [None, ], name="CuLL")
-cv1 = tf.placeholder(tf.float32, [None, ], name="CvLL")
-cu2 = tf.placeholder(tf.float32, [None, ], name="CuLU")
-test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
-test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
-
-saver = tf.train.Saver()
 
 def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_units=256,
       num_quantized_chars=70, dropout_keep_prob=0.5):
@@ -120,35 +97,34 @@ def g(input_x,num_classes=2, filter_sizes=(7, 7, 3), frame_size=32, num_hidden_u
 
     return scores
 
-def test_nn():
-    sess = tf.Session()
-
-    saver.restore(sess, './model82p/model.ckpt')
-
-    predictions = g(test_input)
-    correct_predictions = tf.concat(tf.equal(tf.argmax(predictions, 1), tf.argmax(test_labels, 1)), axis=0)
-    accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
-
-    accs = list()
-
-    batches = test_batch_inter(500)
-
-    for batch in batches:
-        a = sess.run(accuracy,feed_dict={
-            test_input: batch[0],
-            test_labels: batch[1]
-        })
-
-        accs.append(a)
-
-    return np.mean(accs)
-
 def train_neural_network():
+    with tf.Graph().as_default():
         session_conf = tf.ConfigProto(
             allow_soft_placement=FLAGS.allow_soft_placement,
             log_device_placement=FLAGS.log_device_placement)
-
-        with tf.Session(config=session_conf) as sess:
+        sess = tf.Session(config=session_conf)
+        with sess.as_default():
+            global_step = tf.Variable(0, name='global_step', trainable=False)
+            alpha1 = tf.constant(1, dtype=np.float32, name="a1")
+            alpha2 = tf.constant(1, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(1, dtype=np.float32, name="a3")
+            in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
+            in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
+            in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+            in_v2 = tf.placeholder(tf.int32, [None, len_input, ], name="vlu")
+            in_u3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+            in_v3 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
+            labels_u1 = tf.placeholder(tf.float32, [None, 2], name="lull")
+            labels_v1 = tf.placeholder(tf.float32, [None, 2], name="lvll")
+            labels_u2 = tf.placeholder(tf.float32, [None, 2], name="lulu")
+            weights_ll = tf.placeholder(tf.float32, [None, ], name="wll")
+            weights_lu = tf.placeholder(tf.float32, [None, ], name="wlu")
+            weights_uu = tf.placeholder(tf.float32, [None, ], name="wuu")
+            cu1 = tf.placeholder(tf.float32, [None, ], name="CuLL")
+            cv1 = tf.placeholder(tf.float32, [None, ], name="CvLL")
+            cu2 = tf.placeholder(tf.float32, [None, ], name="CuLU")
+            test_input = tf.placeholder(tf.int32, [None, len_input, ], name="test_input")
+            test_labels = tf.placeholder(tf.float32, [None, 2], name="test_labels")
 
             with tf.variable_scope("ngm") as scope:
                 scores_u1 = g(in_u1)
@@ -169,63 +145,84 @@ def train_neural_network():
 
             optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
 
+            saver = tf.train.Saver()
+
             correct_predictions = tf.concat([tf.equal(tf.argmax(scores_u1, 1), tf.argmax(labels_u1, 1)),
                                              tf.equal(tf.argmax(scores_v1, 1), tf.argmax(labels_v1, 1)),
                                              tf.equal(tf.argmax(scores_u2, 1), tf.argmax(labels_u2, 1))],axis=0)
             train_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
+
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
-            saver.restore(sess, "./model/model.ckpt")
+            saver.restore(sess, "./model82p/model.ckpt")
             #sess.run(tf.global_variables_initializer())
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
 
-            num_epochs = 30
-            for epoch in range(num_epochs):
-                print("======== EPOCH " + str(epoch + 1) + " ========")
-
-                batches = batch_iter(batch_size=128)
-                accs = list()
+            def compute_acc():
                 test_accs = list()
-                test_batches = test_batch_inter(512)
 
-                for batch in batches:
-                    current_step = tf.train.global_step(sess, global_step)
-
-                    u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
-                    _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
-                                            feed_dict={in_u1: u1,
-                                                       in_v1: v1,
-                                                       in_u2: u2,
-                                                       in_v2: v2,
-                                                       in_u3: u3,
-                                                       in_v3: v3,
-                                                       labels_u1: lu1,
-                                                       labels_v1: lv1,
-                                                       labels_u2: lu2,
-                                                       weights_ll: w_ll,
-                                                       weights_lu: w_lu,
-                                                       weights_uu: w_uu,
-                                                       cu1: c_ull,
-                                                       cv1: c_vll,
-                                                       cu2: c_ulu})
-                    accs.append(acc)
-
-                    if current_step % FLAGS.evaluate_every == 0:
-                        t_batch = test_batches.__next__()
-                        test_acc = sess.run(test_accuracy, feed_dict={
-                            test_input: t_batch[0],
-                            test_labels: t_batch[1]
+                test_batches = test_batch_inter(500)
+                for batch in test_batches:
+                    a = sess.run(test_accuracy, feed_dict={
+                            test_input: batch[0],
+                            test_labels: batch[1]
                         })
-                        test_accs.append(test_acc)
-                        print("Step: " + str(current_step) +
-                              " | Last Batch Accuracy: " + str(acc) +
-                              " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
-                              " | Test Accuracy: " + str(np.mean(test_accs)) +
-                              " | Train Loss: " + str(loss))
+                    test_accs.append(a)
+                    print(str(a))
 
+                avg = np.mean(test_accs)
+                print(str(avg))
+                return
 
-                    if current_step % FLAGS.checkpoint_every == 0:
-                        saver.save(sess, "./basemodel/model.ckpt")
+            compute_acc()
+            #
+            # num_epochs = 30
+            # for epoch in range(num_epochs):
+            #     print("======== EPOCH " + str(epoch + 1) + " ========")
+            #
+            #     batches = batch_iter(batch_size=128)
+            #     accs = list()
+            #     test_accs = list()
+            #     test_batches = test_batch_inter(512)
+            #
+            #     for batch in batches:
+            #         current_step = tf.train.global_step(sess, global_step)
+            #
+            #         u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+            #         _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
+            #                                 feed_dict={in_u1: u1,
+            #                                            in_v1: v1,
+            #                                            in_u2: u2,
+            #                                            in_v2: v2,
+            #                                            in_u3: u3,
+            #                                            in_v3: v3,
+            #                                            labels_u1: lu1,
+            #                                            labels_v1: lv1,
+            #                                            labels_u2: lu2,
+            #                                            weights_ll: w_ll,
+            #                                            weights_lu: w_lu,
+            #                                            weights_uu: w_uu,
+            #                                            cu1: c_ull,
+            #                                            cv1: c_vll,
+            #                                            cu2: c_ulu})
+            #         accs.append(acc)
+            #
+            #         if current_step % FLAGS.evaluate_every == 0:
+            #             t_batch = test_batches.__next__()
+            #             test_acc = sess.run(test_accuracy, feed_dict={
+            #                 test_input: t_batch[0],
+            #                 test_labels: t_batch[1]
+            #             })
+            #             test_accs.append(test_acc)
+            #             print("Step: " + str(current_step) +
+            #                   " | Last Batch Accuracy: " + str(acc) +
+            #                   " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
+            #                   " | Test Accuracy: " + str(np.mean(test_accs)) +
+            #                   " | Train Loss: " + str(loss))
+            #
+            #
+            #         if current_step % FLAGS.checkpoint_every == 0:
+            #             saver.save(sess, "./basemodel/model.ckpt")

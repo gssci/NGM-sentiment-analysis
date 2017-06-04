@@ -105,9 +105,9 @@ def train_neural_network():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
-            alpha1 = tf.constant(1, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(1, dtype=np.float32, name="a2")
-            alpha3 = tf.constant(1, dtype=np.float32, name="a3")
+            alpha1 = tf.constant(0.125, dtype=np.float32, name="a1")
+            alpha2 = tf.constant(0.55, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(0.325, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
             in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
@@ -155,74 +155,57 @@ def train_neural_network():
 
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
-            saver.restore(sess, "./model82p/model.ckpt")
-            #sess.run(tf.global_variables_initializer())
+            #saver.restore(sess, "./model82p/model.ckpt")
+            sess.run(tf.global_variables_initializer())
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
 
-            def compute_acc():
+
+            num_epochs = 10
+            for epoch in range(num_epochs):
+                print("======== EPOCH " + str(epoch + 1) + " ========")
+
+                batches = batch_iter(batch_size=128)
+                accs = list()
                 test_accs = list()
+                test_batches = test_batch_inter(512)
 
-                test_batches = test_batch_inter(500)
-                for batch in test_batches:
-                    a = sess.run(test_accuracy, feed_dict={
-                            test_input: batch[0],
-                            test_labels: batch[1]
+                for batch in batches:
+                    current_step = tf.train.global_step(sess, global_step)
+
+                    u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
+                    _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
+                                            feed_dict={in_u1: u1,
+                                                       in_v1: v1,
+                                                       in_u2: u2,
+                                                       in_v2: v2,
+                                                       in_u3: u3,
+                                                       in_v3: v3,
+                                                       labels_u1: lu1,
+                                                       labels_v1: lv1,
+                                                       labels_u2: lu2,
+                                                       weights_ll: w_ll,
+                                                       weights_lu: w_lu,
+                                                       weights_uu: w_uu,
+                                                       cu1: c_ull,
+                                                       cv1: c_vll,
+                                                       cu2: c_ulu})
+                    accs.append(acc)
+
+                    if current_step % FLAGS.evaluate_every == 0:
+                        t_batch = test_batches.__next__()
+                        test_acc = sess.run(test_accuracy, feed_dict={
+                            test_input: t_batch[0],
+                            test_labels: t_batch[1]
                         })
-                    test_accs.append(a)
-                    print(str(a))
+                        test_accs.append(test_acc)
+                        print("Step: " + str(current_step) +
+                              " | Last Batch Accuracy: " + str(acc) +
+                              " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
+                              " | Test Accuracy: " + str(np.mean(test_accs)) +
+                              " | Train Loss: " + str(loss))
 
-                avg = np.mean(test_accs)
-                print(str(avg))
-                return
 
-            compute_acc()
-            #
-            # num_epochs = 30
-            # for epoch in range(num_epochs):
-            #     print("======== EPOCH " + str(epoch + 1) + " ========")
-            #
-            #     batches = batch_iter(batch_size=128)
-            #     accs = list()
-            #     test_accs = list()
-            #     test_batches = test_batch_inter(512)
-            #
-            #     for batch in batches:
-            #         current_step = tf.train.global_step(sess, global_step)
-            #
-            #         u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu = batch
-            #         _, loss, acc = sess.run([optimizer, loss_function, train_accuracy],
-            #                                 feed_dict={in_u1: u1,
-            #                                            in_v1: v1,
-            #                                            in_u2: u2,
-            #                                            in_v2: v2,
-            #                                            in_u3: u3,
-            #                                            in_v3: v3,
-            #                                            labels_u1: lu1,
-            #                                            labels_v1: lv1,
-            #                                            labels_u2: lu2,
-            #                                            weights_ll: w_ll,
-            #                                            weights_lu: w_lu,
-            #                                            weights_uu: w_uu,
-            #                                            cu1: c_ull,
-            #                                            cv1: c_vll,
-            #                                            cu2: c_ulu})
-            #         accs.append(acc)
-            #
-            #         if current_step % FLAGS.evaluate_every == 0:
-            #             t_batch = test_batches.__next__()
-            #             test_acc = sess.run(test_accuracy, feed_dict={
-            #                 test_input: t_batch[0],
-            #                 test_labels: t_batch[1]
-            #             })
-            #             test_accs.append(test_acc)
-            #             print("Step: " + str(current_step) +
-            #                   " | Last Batch Accuracy: " + str(acc) +
-            #                   " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
-            #                   " | Test Accuracy: " + str(np.mean(test_accs)) +
-            #                   " | Train Loss: " + str(loss))
-            #
-            #
-            #         if current_step % FLAGS.checkpoint_every == 0:
-            #             saver.save(sess, "./basemodel/model.ckpt")
+                    if current_step % FLAGS.checkpoint_every == 0:
+                        saver.save(sess, "./model.ckpt")

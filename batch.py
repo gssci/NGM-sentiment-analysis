@@ -144,10 +144,11 @@ def test_batch_inter(batch_size=128):
     """
     test_samples = np.load("./data/test/test_encoded_samples.npy")
     test_labels = np.load("./data/test/test_labels.npy")
-    len_data = len(test_labels)
+    len_data = len(test_samples)
+
     shuffle_indices = np.random.permutation(range(len_data))
 
-    num_batches = int(len_data / batch_size) + 1
+    num_batches = int(len_data / batch_size)
 
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size

@@ -79,3 +79,10 @@ def encode_test_samples():
 
     np.save("./data/test/test_encoded_samples.npy", X_test)
     np.save("./data/test/test_labels.npy", Y_test)
+
+# if __name__ == '__main__':
+#
+#     while (True):
+#         input_string = input("Enter input to evaluate: ")
+#         result = string_to_int8_conversion(input_string)
+#         print(str(result))

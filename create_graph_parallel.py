@@ -132,7 +132,7 @@ if __name__ == '__main__':
     lock = Lock()
 
     processes = []
-    num_of_cpu = cpu_count()
+    num_of_cpu = 20
 
     chunks = split_load(size,num_of_cpu)
 

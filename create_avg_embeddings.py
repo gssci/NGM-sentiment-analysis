@@ -39,7 +39,7 @@ for review in glob.glob('./data/train/pos/*.txt'):
     # read file of training raw_data and correctly returns text
     # that includes html tags
     with open(review, 'r', encoding='utf8') as myfile:
-        data = BeautifulSoup(myfile, parser="html5lib").get_text()
+        data = BeautifulSoup(myfile, "html5lib").get_text()
     # NLTK function to extract words from text
     # very important, much better than splitting the string
     words = word_tokenize(data)
@@ -53,7 +53,7 @@ for review in glob.glob('./data/train/pos/*.txt'):
 
 for review in glob.glob('./data/train/neg/*.txt'):
     with open(review, 'r', encoding='utf8') as myfile:
-        data = BeautifulSoup(myfile, parser="html5lib").get_text()
+        data = BeautifulSoup(myfile, "html5lib").get_text()
     words = word_tokenize(data)
     L[i] = np.mean([word2vec(w) for w in words], axis=0)
     print(str(i))
@@ -65,7 +65,7 @@ sp.sparse.save_npz('./data/graph/labeled.npz', L.tocsr())
 j = 0 
 for review in glob.glob('./data/train/unsup/*.txt'):
     with open(review, 'r', encoding='utf8') as myfile:
-        data = BeautifulSoup(myfile, parser="html5lib").get_text()
+        data = BeautifulSoup(myfile, "html5lib").get_text()
     words = word_tokenize(data)
     U[j] = np.mean([word2vec(w) for w in words], axis=0)
     print(str(j))

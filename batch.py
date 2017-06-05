@@ -9,6 +9,7 @@ pos = 12500 #last index of positive sample
 l = 25000 #last index of labeled samples
 u = 75000 #last index of all samples
 
+
 def label(i):
     if 0 <= i < 12500:
         return np.array([0, 1]) #pos

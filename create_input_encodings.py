@@ -46,7 +46,7 @@ def encode_traing_samples():
     for i in range(n_samples):
         path = indices_dict.get(i)
         with open(path, 'r', encoding='utf8') as file:
-            input_string = BeautifulSoup(file, parser="html5lib").get_text()
+            input_string = BeautifulSoup(file, "html5lib").get_text()
 
         X[i] = string_to_int8_conversion(input_string)
         print(str(i))
@@ -61,7 +61,7 @@ def encode_test_samples():
 
     for review in glob.glob('./data/test/pos/*.txt'):
         with open(review, 'r', encoding='utf8') as myfile:
-            data = BeautifulSoup(myfile, parser="html5lib").get_text()
+            data = BeautifulSoup(myfile, "html5lib").get_text()
 
         X_test[i] = string_to_int8_conversion(data)
         Y_test[i, 1] = 1
@@ -70,7 +70,7 @@ def encode_test_samples():
 
     for review in glob.glob('./data/test/neg/*.txt'):
         with open(review, 'r', encoding='utf8') as myfile:
-            data = BeautifulSoup(myfile, parser="html5lib").get_text()
+            data = BeautifulSoup(myfile, "html5lib").get_text()
 
         X_test[i] = string_to_int8_conversion(data)
         Y_test[i, 0] = 1
@@ -79,10 +79,3 @@ def encode_test_samples():
 
     np.save("./data/test/test_encoded_samples.npy", X_test)
     np.save("./data/test/test_labels.npy", Y_test)
-
-# if __name__ == '__main__':
-#
-#     while (True):
-#         input_string = input("Enter input to evaluate: ")
-#         result = string_to_int8_conversion(input_string)
-#         print(str(result))

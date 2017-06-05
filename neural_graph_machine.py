@@ -9,7 +9,7 @@ len_input = 1014
 
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 50, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -107,7 +107,7 @@ def train_neural_network():
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
             alpha1 = tf.constant(0.10, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(0.15, dtype=np.float32, name="a2")
+            alpha2 = tf.constant(0.10, dtype=np.float32, name="a2")
             alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
@@ -162,14 +162,14 @@ def train_neural_network():
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
 
-            num_epochs = 10
+            num_epochs = 20
             for epoch in range(num_epochs):
                 print("======== EPOCH " + str(epoch + 1) + " ========")
 
                 batches = batch_iter(batch_size=128)
                 accs = list()
                 test_accs = list()
-                test_batches = test_batch_inter(512)
+                test_batches = test_batch_inter()
 
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)

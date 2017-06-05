@@ -83,26 +83,6 @@ def batch_iter(batch_size):
     """
         Generates a batch iterator for the dataset.
     """
-    # data = np.array(data)
-
-    # Shuffle the data at each epoch
-    # Partition the graph into neighbourhood regions
-    # and shuffle edges
-    # partitions = list()
-    # visited = set()
-    # for node in graph.nodes():
-    #     if node not in visited:
-    #         adjacent_edges = graph.edges(node)
-    #         partitions.append(adjacent_edges)
-    #         for u, v in adjacent_edges:
-    #             visited.add(u)
-    #
-    # random.shuffle(partitions)
-    #
-    # for partition in partitions:
-    #     random.shuffle(partition)
-    #
-    # helper_edges = [val for sublist in partitions for val in sublist]
 
     data_size = len(graph.edges())
 
@@ -116,7 +96,7 @@ def batch_iter(batch_size):
         yield next_batch(edges,start_index,end_index)
 
 
-def test_batch_inter(batch_size=128):
+def test_batch_inter(batch_size=250):
     """
     batch iterator for test data with labels
     """

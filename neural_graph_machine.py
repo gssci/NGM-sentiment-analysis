@@ -107,8 +107,8 @@ def train_neural_network():
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
             alpha1 = tf.constant(0.10, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(0.25, dtype=np.float32, name="a2")
-            alpha3 = tf.constant(0.15, dtype=np.float32, name="a3")
+            alpha2 = tf.constant(0.15, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
             in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")

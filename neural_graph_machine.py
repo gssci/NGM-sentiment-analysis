@@ -106,9 +106,9 @@ def train_neural_network():
         sess = tf.Session(config=session_conf)
         with sess.as_default():
             global_step = tf.Variable(0, name='global_step', trainable=False)
-            alpha1 = tf.constant(0.125, dtype=np.float32, name="a1")
-            alpha2 = tf.constant(0.55, dtype=np.float32, name="a2")
-            alpha3 = tf.constant(0.325, dtype=np.float32, name="a3")
+            alpha1 = tf.constant(0.10, dtype=np.float32, name="a1")
+            alpha2 = tf.constant(0.15, dtype=np.float32, name="a2")
+            alpha3 = tf.constant(0.05, dtype=np.float32, name="a3")
             in_u1 = tf.placeholder(tf.int32, {None, len_input, }, name="ull")
             in_v1 = tf.placeholder(tf.int32, [None, len_input, ], name="vll")
             in_u2 = tf.placeholder(tf.int32, [None, len_input, ], name="ulu")
@@ -161,7 +161,6 @@ def train_neural_network():
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
-
 
             num_epochs = 10
             for epoch in range(num_epochs):

@@ -173,5 +173,3 @@ with tf.Graph().as_default():
 
             print("P(Positive) = " + str(result[1]))
             print("P(Negative) = " + str(result[0]))
-
-

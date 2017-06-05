@@ -1,11 +1,13 @@
 import numpy as np
 import networkx as nx
 from embeddings_graph import EmbeddingsGraph
-import random
 
-graph = EmbeddingsGraph().G
+graph = EmbeddingsGraph().graph
 X = np.load("./data/train/encoded_samples.npy")
 
+pos = 12500 #last index of positive sample
+l = 25000 #last index of labeled samples
+u = 75000 #last index of all samples
 
 def label(i):
     if 0 <= i < 12500:
@@ -24,81 +26,57 @@ def next_batch(h_edges, start, finish):
     edges_ll = list()
     edges_lu = list()
     edges_uu = list()
-    w_ll = list()
-    w_lu = list()
-    w_uu = list()
-    edg = h_edges[start:finish]
-    edg = np.asarray(edg)
+    weights_ll = list()
+    weights_lu = list()
+    weights_uu = list()
+    batch_edges = h_edges[start:finish]
+    batch_edges = np.asarray(batch_edges)
 
-    for i, j in edg[:]:
-        if (0 <= i < 25000) and (0 <= j < 25000):
+    for i, j in batch_edges[:]:
+        if (0 <= i < l) and (0 <= j < l):
             edges_ll.append((i, j))
-            w_ll.append(graph.get_edge_data(i,j)['weight'])
-        elif (0 <= i < 25000) and (25000 <= j < 75000):
+            weights_ll.append(graph.get_edge_data(i,j)['weight'])
+        elif (0 <= i < l) and (l <= j < u):
             edges_lu.append((i, j))
-            w_lu.append(graph.get_edge_data(i,j)['weight'])
+            weights_lu.append(graph.get_edge_data(i,j)['weight'])
         else:
             edges_uu.append((i, j))
-            w_uu.append(graph.get_edge_data(i,j)['weight'])
-
-    sub_ell = nx.Graph(data=edges_ll)
-    sub_elu = nx.Graph(data=edges_lu)
+            weights_uu.append(graph.get_edge_data(i,j)['weight'])
 
     u_ll = [e[0] for e in edges_ll]
 
     # number of incident edges for nodes u
-    c_ull = [1 / len(sub_ell.edges(u)) for u in u_ll]
+    c_ull = [1 / len(graph.edges(n)) for n in u_ll]
     v_ll = [e[1] for e in edges_ll]
-    c_vll = [1 / len(sub_ell.edges(v)) for v in v_ll]
-    u1 = X[u_ll]
+    c_vll = [1 / len(graph.edges(n)) for n in v_ll]
+    nodes_ll_u = X[u_ll]
 
-    lu1 = np.zeros((0,2))
-    if len(u1) > 0:
-        lu1 = np.vstack([label(u) for u in u_ll])
+    labels_ll_u = np.zeros((0,2))
+    if len(nodes_ll_u) > 0:
+        labels_ll_u = np.vstack([label(n) for n in u_ll])
 
-    v1 = X[v_ll]
+    nodes_ll_v = X[v_ll]
 
-    lv1 = np.zeros((0,2))
-    if len(v1) > 0:
-        lv1 = np.vstack([label(v) for v in v_ll])
+    labels_ll_v = np.zeros((0,2))
+    if len(nodes_ll_v) > 0:
+        labels_ll_v = np.vstack([label(n) for n in v_ll])
 
     u_lu = [e[0] for e in edges_lu]
-    c_ulu = [1 / len(sub_elu.edges(u)) for u in u_lu]
-    u2 = X[u_lu]
-    v2 = X[[e[1] for e in edges_lu]]
+    c_ulu = [1 / len(graph.edges(n)) for n in u_lu]
+    nodes_lu_u = X[u_lu]
+    nodes_lu_v = X[[e[1] for e in edges_lu]]
 
-    lu2 = np.zeros((0,2))
-    if len(u2) > 0:
-        lu2 = np.vstack([label(u) for u in u_lu])
+    labels_lu = np.zeros((0,2))
+    if len(nodes_lu_u) > 0:
+        labels_lu = np.vstack([label(n) for n in u_lu])
 
-    u3 = X[[e[0] for e in edges_uu]]
-    v3 = X[[e[1] for e in edges_uu]]
+    nodes_uu_u = X[[e[0] for e in edges_uu]]
+    nodes_uu_v = X[[e[1] for e in edges_uu]]
 
-    #convert to matrix for easier slicing
-    # edges_ll = np.asmatrix(edges_ll)
-    # edges_lu = np.asmatrix(edges_lu)
-    # edges_uu = np.asmatrix(edges_uu)
-
-    # u_ll = edges_ll[:, 0]
-    # #number of incident edges for nodes u
-    # c_ull = [1 / len(sub_ell.edges(u)) for u in u_ll]
-    # v_ll = edges_ll[:, 1]
-    # c_vll = [1 / len(sub_ell.edges(v)) for v in v_ll]
-    # u1 = X[u_ll]
-    # lu1 = np.vstack([label(u) for u in u_ll])
-    # v1 = X[v_ll]
-    # lv1 = np.vstack([label(v) for v in v_ll])
-    #
-    # u_lu = edges_lu[:, 0]
-    # c_ulu = [1 / len(sub_elu.edges(u)) for u in u_lu]
-    # u2 = X[u_lu]
-    # lu2 = np.vstack([label(u) for u in u_lu])
-    # v2 = X[edges_lu[:, 1]]
-    #
-    # u3 = X[edges_uu[:, 0]]
-    # v3 = X[edges_uu[:, 1]]
-
-    return u1, v1, lu1, lv1, u3, v3, u2, v2, lu2, w_ll, w_lu, w_uu, c_ull, c_vll, c_ulu
+    return nodes_ll_u, nodes_ll_v, labels_ll_u, labels_ll_v, \
+           nodes_uu_u, nodes_uu_v, nodes_lu_u, nodes_lu_v, \
+           labels_lu, weights_ll, weights_lu, weights_uu, \
+           c_ull, c_vll, c_ulu
 
 
 def batch_iter(batch_size):

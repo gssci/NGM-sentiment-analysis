@@ -1,3 +1,4 @@
+#based on implementation by Sadegh Charmchi https://github.com/scharmchi/char-level-cnn-tf
 import tensorflow as tf
 import numpy as np
 import os
@@ -5,10 +6,10 @@ from batch import batch_iter, test_batch_inter
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 len_input = 1014
-# Misc Parameters
+
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-tf.flags.DEFINE_integer("evaluate_every", 2, "Evaluate model on dev set after this many steps (default: 100)")
+tf.flags.DEFINE_integer("evaluate_every", 50, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 1000, "Save model after this many steps (default: 100)")
 
 FLAGS = tf.flags.FLAGS
@@ -152,9 +153,9 @@ def train_neural_network():
                                              tf.equal(tf.argmax(scores_u2, 1), tf.argmax(labels_u2, 1))],axis=0)
             train_accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
 
-
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
+
             #saver.restore(sess, "./model82p/model.ckpt")
             sess.run(tf.global_variables_initializer())
 
@@ -203,9 +204,8 @@ def train_neural_network():
                         print("Step: " + str(current_step) +
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
-                              " | Test Accuracy: " + str(np.mean(test_accs)) +
+                              " | Validation Accuracy: " + str(np.mean(test_accs)) +
                               " | Train Loss: " + str(loss))
-
 
                     if current_step % FLAGS.checkpoint_every == 0:
                         saver.save(sess, "./model.ckpt")

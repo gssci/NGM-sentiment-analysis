@@ -6,29 +6,17 @@ import random
 class EmbeddingsGraph:
 
     def __init__(self):
-        self.G = nx.Graph()
-        self.ELL = nx.Graph()
-        self.ELU = nx.Graph()
-        self.EUU = nx.Graph()
-        self.graph = pickle.load(open("./data/graph/graph.p", "rb"))
-        self.edges_ll = pickle.load(open("./data/graph/edges_ll.p", "rb"))
-        self.edges_lu = pickle.load(open("./data/graph/edges_lu.p", "rb"))
-        self.edges_uu = pickle.load(open("./data/graph/edges_uu.p", "rb"))
-        self.edges = self.edges_ll + self.edges_lu + self.edges_uu
+        self.graph = nx.Graph()
+        #self.graph = pickle.load(open("./data/graph/graph.p", "rb"))
+        edges_ll = pickle.load(open("./data/graph/edges_ll.p", "rb"))
+        edges_lu = pickle.load(open("./data/graph/edges_lu.p", "rb"))
+        edges_uu = pickle.load(open("./data/graph/edges_uu.p", "rb"))
+        self.edges = edges_ll + edges_lu + edges_uu
         self.indices_dict = pickle.load(open("./data/graph/indices_dict.p", "rb"))
         self.edges_weights = pickle.load(open("./data/graph/edges_weights.p", "rb"))
 
         for (u,v) in self.edges:
-            self.G.add_edge(u,v,weight=self.edges_weights.get((u,v)))
-
-        # for (u,v) in self.edges_ll:
-        #     self.ELL.add_edge(u,v,weight=self.edges_weights.get((u,v)))
-        #
-        # for (u,v) in self.edges_lu:
-        #     self.ELU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
-        #
-        # for (u,v) in self.edges_uu:
-        #     self.EUU.add_edge(u,v,weight=self.edges_weights.get((u,v)))
+            self.graph.add_edge(u, v, weight=self.edges_weights.get((u, v)))
 
     def weight(self,u,v):
         if u < v:

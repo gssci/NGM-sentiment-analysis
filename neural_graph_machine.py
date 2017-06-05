@@ -144,7 +144,7 @@ def train_neural_network():
                             + cu2 * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u2, labels=labels_u2)) \
                             + tf.reduce_sum(alpha3 * weights_uu * tf.nn.softmax_cross_entropy_with_logits(logits=scores_u3, labels=tf.nn.softmax(scores_v3)))
 
-            optimizer = tf.train.AdamOptimizer().minimize(loss_function, global_step=global_step)
+            optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss_function, global_step=global_step)
 
             saver = tf.train.Saver()
 
@@ -156,13 +156,13 @@ def train_neural_network():
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
 
-            #saver.restore(sess, "./model82p/model.ckpt")
-            sess.run(tf.global_variables_initializer())
+            saver.restore(sess, "./model.ckpt")
+            #sess.run(tf.global_variables_initializer())
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
 
-            num_epochs = 20
+            num_epochs = 35
             for epoch in range(num_epochs):
                 print("======== EPOCH " + str(epoch + 1) + " ========")
 

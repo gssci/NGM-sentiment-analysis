@@ -1,4 +1,4 @@
-#based on implementation by Sadegh Charmchi https://github.com/scharmchi/char-level-cnn-tf
+#Convolutional network based on implementation by Sadegh Charmchi https://github.com/scharmchi/char-level-cnn-tf
 import tensorflow as tf
 import numpy as np
 import os
@@ -162,7 +162,7 @@ def train_neural_network():
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
 
-            num_epochs = 35
+            num_epochs = 10
             for epoch in range(num_epochs):
                 print("======== EPOCH " + str(epoch + 1) + " ========")
 
@@ -170,6 +170,7 @@ def train_neural_network():
                 accs = list()
                 test_accs = list()
                 test_batches = test_batch_inter()
+                epoch_loss = 0
 
                 for batch in batches:
                     current_step = tf.train.global_step(sess, global_step)
@@ -192,7 +193,7 @@ def train_neural_network():
                                                        cv1: c_vll,
                                                        cu2: c_ulu})
                     accs.append(acc)
-
+                    epoch_loss += loss
                     if current_step % FLAGS.evaluate_every == 0:
                         t_batch = test_batches.__next__()
                         test_acc = sess.run(test_accuracy, feed_dict={
@@ -204,7 +205,6 @@ def train_neural_network():
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
                               " | Validation Accuracy: " + str(np.mean(test_accs)) +
-                              " | Train Loss: " + str(loss))
+                              " | Train Loss: " + str(epoch_loss))
 
-                    if current_step % FLAGS.checkpoint_every == 0:
-                        saver.save(sess, "./model.ckpt")
+                saver.save(sess, "./model.ckpt")

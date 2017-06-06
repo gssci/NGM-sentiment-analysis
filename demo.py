@@ -21,7 +21,7 @@ with tf.Graph().as_default():
 
         saver = tf.train.Saver()
 
-        saver.restore(sess, "./model82p/model.ckpt")
+        saver.restore(sess, "./model20epochs/model.ckpt")
 
         while(True):
             input_string = input("Enter input to evaluate: ")

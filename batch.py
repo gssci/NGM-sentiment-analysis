@@ -89,7 +89,10 @@ def batch_iter(batch_size):
 
     edges = np.random.permutation(graph.edges())
 
-    num_batches = int(data_size / batch_size) + 1
+    num_batches = int(data_size / batch_size)
+
+    if data_size % batch_size > 0:
+        num_batches = int(data_size / batch_size) + 1
 
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size
@@ -107,7 +110,10 @@ def test_batch_inter(batch_size=250):
 
     shuffle_indices = np.random.permutation(range(len_data))
 
-    num_batches = int(len_data / batch_size)
+    num_batches = int(data_size / batch_size)
+
+    if data_size % batch_size > 0:
+        num_batches = int(data_size / batch_size) + 1
 
     for batch_num in range(num_batches):
         start_index = batch_num * batch_size

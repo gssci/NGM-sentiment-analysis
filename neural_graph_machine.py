@@ -156,8 +156,7 @@ def train_neural_network():
             test_cp = tf.equal(tf.argmax(test_scores, 1), tf.argmax(test_labels, 1))
             test_accuracy = tf.reduce_mean(tf.cast(test_cp, "float"), name="test_accuracy")
 
-            saver.restore(sess, "./model.ckpt")
-            #sess.run(tf.global_variables_initializer())
+            sess.run(tf.global_variables_initializer())
 
             variables_names = [v.name for v in tf.trainable_variables()]
             print(variables_names)
@@ -204,7 +203,7 @@ def train_neural_network():
                         print("Step: " + str(current_step) +
                               " | Last Batch Accuracy: " + str(acc) +
                               " | Epoch Avg Accuracy: " + str(np.mean(accs)) +
-                              " | Validation Accuracy: " + str(np.mean(test_accs)) +
+                              " | Batch Test Accuracy: " + str(np.mean(test_accs)) +
                               " | Train Loss: " + str(epoch_loss))
 
                 saver.save(sess, "./model.ckpt")
